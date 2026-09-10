@@ -75,7 +75,7 @@ class WhaleAlertClient
         if ($blockchain === '') {
             throw new \InvalidArgumentException('Blockchain is required.');
         }
-        $data = $this->http->get("/{$blockchain}/status");
+        $data = $this->http->get('/' . rawurlencode($blockchain) . '/status');
         return new BlockchainStatus($data);
     }
 
@@ -94,7 +94,7 @@ class WhaleAlertClient
         if ($hash === '') {
             throw new \InvalidArgumentException('Hash is required.');
         }
-        $data = $this->http->get("/{$blockchain}/transaction/{$hash}");
+        $data = $this->http->get('/' . rawurlencode($blockchain) . '/transaction/' . rawurlencode($hash));
         return new Transaction($data);
     }
 
@@ -143,7 +143,7 @@ class WhaleAlertClient
             $params['format'] = $options['format'];
         }
 
-        $data = $this->http->get("/{$blockchain}/transactions", $params);
+        $data = $this->http->get('/' . rawurlencode($blockchain) . '/transactions', $params);
         return new TransactionPage($data);
     }
 
@@ -177,7 +177,7 @@ class WhaleAlertClient
         if ($height <= 0) {
             throw new \InvalidArgumentException('Height must be positive.');
         }
-        $data = $this->http->get("/{$blockchain}/block/{$height}");
+        $data = $this->http->get('/' . rawurlencode($blockchain) . '/block/' . $height);
         return new Block($data);
     }
 
@@ -221,7 +221,7 @@ class WhaleAlertClient
             $params['order'] = $options['order'];
         }
 
-        $data = $this->http->get("/{$blockchain}/address/{$address}/transactions", $params);
+        $data = $this->http->get('/' . rawurlencode($blockchain) . '/address/' . rawurlencode($address) . '/transactions', $params);
         return new TransactionPage($data);
     }
 

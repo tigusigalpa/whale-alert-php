@@ -26,6 +26,18 @@ class Config
         int $retryMaxDelayMs = 10000,
         string $userAgent = 'whale-alert-php/1.0.0 (+https://github.com/tigusigalpa/whale-alert-php)',
     ) {
+        $parsedBaseUrl = parse_url($baseUrl);
+        if (
+            $parsedBaseUrl === false
+            || !isset($parsedBaseUrl['scheme'], $parsedBaseUrl['host'])
+            || !in_array(strtolower($parsedBaseUrl['scheme']), ['http', 'https'], true)
+            || isset($parsedBaseUrl['user'])
+            || isset($parsedBaseUrl['pass'])
+            || isset($parsedBaseUrl['query'])
+            || isset($parsedBaseUrl['fragment'])
+        ) {
+            throw new \InvalidArgumentException('Base URL must be an absolute HTTP(S) URL without credentials, query, or fragment.');
+        }
         if ($timeout <= 0) {
             throw new \InvalidArgumentException('Timeout must be a positive integer.');
         }

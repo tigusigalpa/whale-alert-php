@@ -7,9 +7,14 @@ namespace Tigusigalpa\WhaleAlert\Tests\Unit;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Tigusigalpa\WhaleAlert\Config;
 use Tigusigalpa\WhaleAlert\WhaleAlertClient;
 use Tigusigalpa\WhaleAlert\Exceptions\UnauthorizedException;
@@ -280,5 +285,96 @@ class WhaleAlertClientTest extends TestCase
 
         $this->expectException(\Tigusigalpa\WhaleAlert\Exceptions\ApiException::class);
         $client->getBlockchainStatus('bitcoin');
+    }
+
+    public function testPathSegmentsAreUrlEncoded(): void
+    {
+        $history = [];
+        $stack = HandlerStack::create(new MockHandler([
+            new Response(200, [], json_encode([
+                'height' => 1,
+                'hash' => 'hash?unexpected=true',
+                'fee' => '0',
+                'fee_symbol' => 'ETH',
+                'sub_transactions' => [],
+            ])),
+        ]));
+        $stack->push(Middleware::history($history));
+        $client = new WhaleAlertClient(
+            new Config('test-api-key'),
+            new GuzzleClient(['handler' => $stack]),
+            new HttpFactory(),
+            new HttpFactory(),
+        );
+
+        $client->getTransaction('ethereum/foo', 'hash?unexpected=true');
+
+        $uri = $history[0]['request']->getUri();
+        $this->assertSame('/ethereum%2Ffoo/transaction/hash%3Funexpected%3Dtrue', $uri->getPath());
+        $this->assertSame('api_key=test-api-key', $uri->getQuery());
+    }
+
+    public function testNextPageRejectsMismatchedPort(): void
+    {
+        $client = $this->createClient([]);
+
+        $this->expectException(\Tigusigalpa\WhaleAlert\Exceptions\ApiException::class);
+        $client->listTransactionsNext('https://leviathan.whale-alert.io:8443/bitcoin/transactions?start_height=1');
+    }
+
+    public function testNextPageAlwaysUsesConfiguredApiKey(): void
+    {
+        $history = [];
+        $stack = HandlerStack::create(new MockHandler([
+            new Response(200, [], json_encode(['transactions' => [], 'next' => ''])),
+        ]));
+        $stack->push(Middleware::history($history));
+        $client = new WhaleAlertClient(
+            new Config('configured-key'),
+            new GuzzleClient(['handler' => $stack]),
+            new HttpFactory(),
+            new HttpFactory(),
+        );
+
+        $client->listTransactionsNext(
+            'https://leviathan.whale-alert.io/bitcoin/transactions?start_height=1&api_key=provider-key#ignored'
+        );
+
+        $uri = $history[0]['request']->getUri();
+        $this->assertSame('start_height=1&api_key=configured-key', $uri->getQuery());
+        $this->assertSame('', $uri->getFragment());
+    }
+
+    public function testScalarJsonResponseThrowsApiException(): void
+    {
+        $client = $this->createClient([new Response(200, [], '"unexpected"')]);
+
+        $this->expectException(\Tigusigalpa\WhaleAlert\Exceptions\ApiException::class);
+        $client->getBlockchainStatus('bitcoin');
+    }
+
+    public function testTransportErrorRedactsApiKey(): void
+    {
+        $httpClient = new class implements ClientInterface {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                throw new class('Request failed for https://example.test?api_key=super-secret') extends \RuntimeException implements ClientExceptionInterface {
+                };
+            }
+        };
+        $client = new WhaleAlertClient(
+            new Config('super-secret'),
+            $httpClient,
+            new HttpFactory(),
+            new HttpFactory(),
+        );
+
+        try {
+            $client->getBlockchainStatus('bitcoin');
+            $this->fail('Expected an API exception.');
+        } catch (\Tigusigalpa\WhaleAlert\Exceptions\ApiException $exception) {
+            $this->assertStringNotContainsString('super-secret', $exception->getMessage());
+            $this->assertStringContainsString('api_key=REDACTED', $exception->getMessage());
+        }
     }
 }

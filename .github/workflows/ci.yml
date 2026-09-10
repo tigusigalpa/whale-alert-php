@@ -1,18 +1,48 @@
-name: CI
+name: Tests
 
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
-        laravel: ['10', '11', '12']
+        include:
+          - php: '8.1'
+            laravel: '10'
+            testbench: '8'
+          - php: '8.2'
+            laravel: '10'
+            testbench: '8'
+          - php: '8.3'
+            laravel: '10'
+            testbench: '8'
+          - php: '8.2'
+            laravel: '11'
+            testbench: '9'
+          - php: '8.3'
+            laravel: '11'
+            testbench: '9'
+          - php: '8.2'
+            laravel: '12'
+            testbench: '10'
+          - php: '8.3'
+            laravel: '12'
+            testbench: '10'
 
     steps:
       - uses: actions/checkout@v4
@@ -20,15 +50,26 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-version }}
-          extensions: sockets, json, mbstring
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml
           coverage: none
+          tools: composer:v2
 
-      - name: Validate composer.json
-        run: composer validate --strict
+      - name: Validate Composer manifest
+        run: composer validate --strict --no-check-lock --no-check-publish
+
+      - name: Select Laravel integration version
+        run: composer require --dev --no-interaction --no-update "orchestra/testbench:^${{ matrix.testbench }}"
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: composer update --prefer-dist --no-interaction --no-progress --with-all-dependencies
+
+      - name: Run PHP syntax checks
+        run: find src tests examples -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Run tests
         run: vendor/bin/phpunit --colors=always
+
+      - name: Audit dependencies
+        if: matrix.php == '8.3' && matrix.laravel == '12'
+        run: composer audit

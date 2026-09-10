@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- WebSocket keepalive pings with configurable interval (30 seconds by default),
+  pong timeout detection, RFC 6455 handshake validation, fragmented text-frame
+  support, and a 16 MiB inbound-message limit.
+- GitHub Actions for the PHP/Laravel compatibility matrix, PHPUnit coverage
+  uploads to Codecov, weekly CodeQL scans, dependency-review pull-request
+  checks, and scheduled Dependabot updates.
+
 ### Fixed
 
 - `WebSocket\Client::readBytes()` could spin in a tight busy-loop consuming
@@ -16,6 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   routes through the registered error handler before evaluating reconnect
   behavior, matching the reconnect/error-handling contract for ordinary
   disconnects.
+- WebSocket ping replies are now sent as RFC 6455 pong control frames rather
+  than an invalid nested text frame; reconnect attempts are iterative, close
+  failed transports, and reset after a successful recovery.
+- REST path values are percent-encoded; pagination URLs must match the exact
+  configured scheme, host, and effective port; and provider-supplied API keys
+  are replaced with the configured key.
+- API keys are redacted from HTTP transport exceptions and JSON error excerpts.
+- Scalar JSON responses now raise an API exception instead of leaking a
+  TypeError.
+
+### Security
+
+- Updated Guzzle and related HTTP packages plus league/commonmark to versions
+  without the advisories reported by composer audit.
 
 ## [1.0.0] - 2024-01-01
 

@@ -1,9 +1,13 @@
-# Whale Alert PHP SDK
+# Whale Alert PHP/Laravel Client/SDK/Library
 
 ![Whale Alert PHP SDK](https://i.postimg.cc/BZR6rj7c/whale-alert-php-laravel.jpg)
 
 [![Packagist](https://img.shields.io/packagist/v/tigusigalpa/whale-alert-php.svg)](https://packagist.org/packages/tigusigalpa/whale-alert-php)
-[![CI](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/ci.yml/badge.svg)](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/ci.yml)
+[![Tests](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/ci.yml/badge.svg)](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/ci.yml)
+[![Coverage](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/coverage.yml/badge.svg)](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/coverage.yml)
+[![CodeQL](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/codeql.yml/badge.svg)](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/codeql.yml)
+[![Codecov](https://codecov.io/gh/tigusigalpa/whale-alert-php/graph/badge.svg)](https://codecov.io/gh/tigusigalpa/whale-alert-php)
+[![PHP Version](https://img.shields.io/packagist/php-v/tigusigalpa/whale-alert-php.svg)](https://packagist.org/packages/tigusigalpa/whale-alert-php)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 An unofficial PHP client library for the [Whale Alert Enterprise API](https://developer.whale-alert.io/api-account/documentation).
@@ -88,7 +92,7 @@ foreach ($page->getTransactions() as $tx) {
 
 ### WebSocket API
 
-The WebSocket client streams real-time alerts. You register message and error handlers, connect, subscribe, and then call `listen()` to enter the read loop. Automatic reconnection is opt-in: set `maxReconnects` greater than zero.
+The WebSocket client streams real-time alerts. You register message and error handlers, connect, subscribe, and then call `listen()` to enter the read loop. Automatic reconnection is opt-in: set `maxReconnects` greater than zero. It sends RFC 6455 ping frames every 30 seconds by default and requires a pong within 60 seconds; set `pingInterval` to tune the ping cadence.
 
 ```php
 use Tigusigalpa\WhaleAlert\WebSocket\Client;
@@ -99,7 +103,7 @@ $wsUrl = sprintf('wss://leviathan.whale-alert.io/ws?api_key=%s', getenv('WHALE_A
 
 // maxReconnects is the third constructor argument. We use a named argument
 // so the default connection timeout (30 seconds) is left in place.
-$client = new Client($wsUrl, maxReconnects: 5);
+$client = new Client($wsUrl, maxReconnects: 5, pingInterval: 30);
 
 // Called for every decoded message.
 $client->onMessage(function ($message) {
@@ -227,7 +231,7 @@ return [
     'max_retries' => env('WHALE_ALERT_MAX_RETRIES', 0),
     'retry_delay_ms' => env('WHALE_ALERT_RETRY_DELAY_MS', 500),
     'retry_max_delay_ms' => env('WHALE_ALERT_RETRY_MAX_DELAY_MS', 10000),
-    'user_agent' => env('WHALE_ALERT_USER_AGENT', 'whale-alert-php/1.0.0'),
+    'user_agent' => env('WHALE_ALERT_USER_AGENT', 'whale-alert-php/1.0.0 (+https://github.com/tigusigalpa/whale-alert-php)'),
     // 'http_client' => null, // optional service ID for a PSR-18 client
 ];
 ```
@@ -283,7 +287,6 @@ The retry policy is designed to be safe and predictable:
 - Retries happen on HTTP 429 (rate limited) and 5xx server errors.
 - The 429 response can include a `Retry-After` header. When present, the client waits at least that long before the next attempt.
 - Backoff is exponential: `retryDelayMs * 2^attempt`, capped at `retryMaxDelayMs`.
-- A small amount of jitter is added to avoid thundering-herd behavior.
 
 ## Pagination
 
@@ -302,7 +305,7 @@ foreach ($page->getTransactions() as $tx) {
 }
 
 // Fetch the next page. The URL is validated against the configured base origin.
-if ($page->getNext() !== null) {
+if ($page->hasNext()) {
     $nextPage = $client->listTransactionsNext($page->getNext());
     // process $nextPage...
 }

@@ -98,7 +98,7 @@ class Client
                     $this->sleep($this->backoff($attempt));
                     continue;
                 }
-                throw new ApiException('HTTP transport error: ' . $e->getMessage(), 0, null, null, 0, $e);
+                throw new ApiException('HTTP transport error: ' . $this->redactSensitive($e->getMessage()), 0, null, null, 0, $e);
             }
 
             $status = $response->getStatusCode();
@@ -141,6 +141,10 @@ class Client
             throw new ApiException('Failed to decode JSON response: ' . json_last_error_msg());
         }
 
+        if (!is_array($data)) {
+            throw new ApiException('Expected a JSON object or array response.');
+        }
+
         return $data;
     }
 
@@ -151,9 +155,13 @@ class Client
         if (is_array($data)) {
             $message = $data['error'] ?? $data['message'] ?? '';
         }
+        if (!is_string($message)) {
+            $message = '';
+        }
         if ($message === '') {
             $message = $this->statusText($status);
         }
+        $message = $this->redactSensitive($message);
 
         $excerpt = $this->sanitizeBody($body, 512);
         $retryAfter = $this->parseRetryAfter($response);
@@ -213,7 +221,7 @@ class Client
         if ($requireAuth && $this->config->getApiKey() !== '') {
             $params['api_key'] = $this->config->getApiKey();
         }
-        $queryString = http_build_query($params);
+        $queryString = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
         $url = $this->config->getBaseUrl() . $path;
         if ($queryString !== '') {
             $url .= '?' . $queryString;
@@ -236,27 +244,26 @@ class Client
             throw new ApiException('Invalid base URL configuration');
         }
 
-        if (($parsed['host'] ?? '') !== ($baseParsed['host'] ?? '')) {
+        if (
+            isset($parsed['user'])
+            || isset($parsed['pass'])
+            || !isset($parsed['scheme'], $parsed['host'])
+            || $this->origin($parsed) !== $this->origin($baseParsed)
+        ) {
             throw new ApiException(
-                'Next URL host does not match base URL host'
+                'Next URL origin does not match base URL origin'
             );
         }
 
-        if (($parsed['scheme'] ?? '') !== ($baseParsed['scheme'] ?? '')) {
-            throw new ApiException(
-                'Next URL scheme does not match base URL scheme'
-            );
-        }
-
-        // Append api_key if not present
+        // Always use the configured API key rather than a value in a provider-supplied URL.
         if ($this->config->getApiKey() !== '') {
             $query = $parsed['query'] ?? '';
             parse_str($query, $queryParams);
-            if (!isset($queryParams['api_key'])) {
-                $queryParams['api_key'] = $this->config->getApiKey();
-                $parsed['query'] = http_build_query($queryParams);
-            }
+            $queryParams['api_key'] = $this->config->getApiKey();
+            $parsed['query'] = http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
         }
+
+        unset($parsed['fragment']);
 
         return $this->unparseUrl($parsed);
     }
@@ -279,7 +286,36 @@ class Client
     {
         $s = strlen($body) > $max ? substr($body, 0, $max) : $body;
         $s = preg_replace('/api_key=([^&"\s]+)/', 'api_key=REDACTED', $s) ?? $s;
-        return $s;
+        return $this->redactSensitive($s);
+    }
+
+    /**
+     * Returns a normalized origin including the effective port.
+     *
+     * @param array<string, mixed> $parsed
+     */
+    private function origin(array $parsed): string
+    {
+        $scheme = strtolower((string) ($parsed['scheme'] ?? ''));
+        $host = strtolower((string) ($parsed['host'] ?? ''));
+        $port = $parsed['port'] ?? match ($scheme) {
+            'http' => 80,
+            'https' => 443,
+            default => 0,
+        };
+
+        return $scheme . '://' . $host . ':' . $port;
+    }
+
+    private function redactSensitive(string $value): string
+    {
+        $apiKey = $this->config->getApiKey();
+        if ($apiKey !== '') {
+            $value = str_replace($apiKey, 'REDACTED', $value);
+        }
+
+        $value = preg_replace('/(api_key=)[^&"\s]+/i', '$1REDACTED', $value) ?? $value;
+        return preg_replace('/("api_key"\s*:\s*")[^"]*(")/i', '$1REDACTED$2', $value) ?? $value;
     }
 
     private function statusText(int $status): string

@@ -46,6 +46,12 @@ class ConfigTest extends TestCase
         new Config(timeout: 0);
     }
 
+    public function testInvalidBaseUrl(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new Config(baseUrl: 'https://api.example.test?api_key=not-allowed');
+    }
+
     public function testInvalidMaxRetries(): void
     {
         $this->expectException(\InvalidArgumentException::class);

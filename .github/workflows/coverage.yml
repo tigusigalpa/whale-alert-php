@@ -40,7 +40,7 @@ jobs:
         run: vendor/bin/phpunit --coverage-clover=coverage.xml --colors=always
 
       - name: Upload report to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -16,4 +16,4 @@ jobs:
 
     steps:
       - name: Review changed dependencies
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5

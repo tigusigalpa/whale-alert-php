@@ -30,12 +30,13 @@ class WhaleAlertClientTest extends TestCase
         $handlerStack = HandlerStack::create($mock);
         $guzzle = new GuzzleClient(['handler' => $handlerStack]);
         $requestFactory = new HttpFactory();
+        $streamFactory = new HttpFactory();
 
         if ($config === null) {
             $config = new Config('test-api-key');
         }
 
-        return new WhaleAlertClient($config, $guzzle, $requestFactory);
+        return new WhaleAlertClient($config, $guzzle, $requestFactory, $streamFactory);
     }
 
     public function testGetSupportedBlockchains(): void

@@ -26,10 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   blocks compatible Testbench 8/9 dependency resolutions because of published
   security advisories.
 
-### Changed
-
-- Removed the unused stream-factory dependency from the GET-only HTTP client.
-
 - `WebSocket\Client::readBytes()` could spin in a tight busy-loop consuming
   100% CPU if the underlying stream socket timed out without reaching EOF.
   A stream timeout is now detected via `stream_get_meta_data()` and raised

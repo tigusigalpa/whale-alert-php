@@ -56,6 +56,7 @@ class LaravelIntegrationTest extends TestCase
             $config,
             $guzzle,
             new HttpFactory(),
+            new HttpFactory(),
         );
 
         $chains = $client->getSupportedBlockchains();

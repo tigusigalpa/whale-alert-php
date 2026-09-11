@@ -8,6 +8,7 @@ use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\HttpFactory;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Tigusigalpa\WhaleAlert\Dto\Block;
 use Tigusigalpa\WhaleAlert\Dto\Blockchain;
 use Tigusigalpa\WhaleAlert\Dto\BlockchainStatus;
@@ -29,11 +30,13 @@ class WhaleAlertClient
      * @param Config $config Client configuration
      * @param ClientInterface|null $httpClient PSR-18 HTTP client (defaults to Guzzle)
      * @param RequestFactoryInterface|null $requestFactory PSR-17 request factory
+     * @param StreamFactoryInterface|null $streamFactory PSR-17 stream factory
      */
     public function __construct(
         Config $config,
         ?ClientInterface $httpClient = null,
         ?RequestFactoryInterface $requestFactory = null,
+        ?StreamFactoryInterface $streamFactory = null,
     ) {
         if ($httpClient === null) {
             $httpClient = new GuzzleClient([
@@ -41,8 +44,11 @@ class WhaleAlertClient
             ]);
         }
         if ($requestFactory === null) {
-            $requestFactory = new HttpFactory();
+            $requestFactory = $streamFactory instanceof RequestFactoryInterface
+                ? $streamFactory
+                : new HttpFactory();
         }
+
         $this->http = new HttpClient($httpClient, $requestFactory, $config);
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tigusigalpa\WhaleAlert\Laravel;
 
 use Illuminate\Support\Facades\Facade;
+use Tigusigalpa\WhaleAlert\WhaleAlertClient;
 
 /**
  * Laravel facade for Whale Alert.

@@ -11,6 +11,7 @@ use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response;
 use Orchestra\Testbench\TestCase;
 use Tigusigalpa\WhaleAlert\Laravel\WhaleAlertServiceProvider;
+use Tigusigalpa\WhaleAlert\Laravel\WhaleAlertFacade;
 use Tigusigalpa\WhaleAlert\WhaleAlertClient;
 use Tigusigalpa\WhaleAlert\Config;
 
@@ -55,7 +56,6 @@ class LaravelIntegrationTest extends TestCase
             $config,
             $guzzle,
             new HttpFactory(),
-            new HttpFactory(),
         );
 
         $chains = $client->getSupportedBlockchains();
@@ -72,5 +72,10 @@ class LaravelIntegrationTest extends TestCase
 
         $this->assertFileExists(config_path('whale-alert.php'));
         @unlink(config_path('whale-alert.php'));
+    }
+
+    public function testFacadeResolvesTheRegisteredClient(): void
+    {
+        $this->assertInstanceOf(WhaleAlertClient::class, WhaleAlertFacade::getFacadeRoot());
     }
 }

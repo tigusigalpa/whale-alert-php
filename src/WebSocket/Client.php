@@ -100,7 +100,7 @@ class Client
 
         $host = $parsed['host'];
         $port = (int) ($parsed['port'] ?? ($scheme === 'wss' ? 443 : 80));
-        if ($port < 1 || $port > 65535) {
+        if ($port < 1) {
             throw new WebSocketConnectionException('WebSocket URL has an invalid port.');
         }
 
@@ -207,8 +207,8 @@ class Client
     private function parseHandshakeResponse(string $response): array
     {
         $parts = explode("\r\n\r\n", $response, 2);
-        $lines = explode("\r\n", $parts[0] ?? '');
-        $statusLine = array_shift($lines) ?? '';
+        $lines = explode("\r\n", $parts[0]);
+        $statusLine = array_shift($lines);
         $headers = [];
 
         foreach ($lines as $line) {

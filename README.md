@@ -5,7 +5,7 @@
 [![Packagist](https://img.shields.io/packagist/v/tigusigalpa/whale-alert-php.svg)](https://packagist.org/packages/tigusigalpa/whale-alert-php)
 [![Tests](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/ci.yml/badge.svg)](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/ci.yml)
 [![Coverage](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/coverage.yml/badge.svg)](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/coverage.yml)
-[![CodeQL](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/codeql.yml/badge.svg)](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/codeql.yml)
+[![Static analysis](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/tigusigalpa/whale-alert-php/actions/workflows/static-analysis.yml)
 [![Codecov](https://codecov.io/gh/tigusigalpa/whale-alert-php/graph/badge.svg)](https://codecov.io/gh/tigusigalpa/whale-alert-php)
 [![PHP Version](https://img.shields.io/packagist/php-v/tigusigalpa/whale-alert-php.svg)](https://packagist.org/packages/tigusigalpa/whale-alert-php)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

@@ -13,14 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pong timeout detection, RFC 6455 handshake validation, fragmented text-frame
   support, and a 16 MiB inbound-message limit.
 - GitHub Actions for the PHP/Laravel compatibility matrix, PHPUnit coverage
-  uploads to Codecov, weekly CodeQL scans, dependency-review pull-request
+  uploads to Codecov, weekly PHPStan static analysis, dependency-review pull-request
   checks, and scheduled Dependabot updates.
 
 ### Fixed
 
+- Configured PHPUnit's source filter so Clover coverage reports include the
+  library code in `src/`.
+- Corrected the Laravel facade's PSR-4 filename and client-class import so the
+  `WhaleAlert` alias resolves the registered client.
 - Replaced end-of-life Laravel 10/11 CI targets with Laravel 12/13. Composer
   blocks compatible Testbench 8/9 dependency resolutions because of published
   security advisories.
+
+### Changed
+
+- Removed the unused stream-factory dependency from the GET-only HTTP client.
 
 - `WebSocket\Client::readBytes()` could spin in a tight busy-loop consuming
   100% CPU if the underlying stream socket timed out without reaching EOF.

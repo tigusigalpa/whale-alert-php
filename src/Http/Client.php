@@ -6,7 +6,6 @@ namespace Tigusigalpa\WhaleAlert\Http;
 
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Tigusigalpa\WhaleAlert\Config;
 use Tigusigalpa\WhaleAlert\Exceptions\ApiException;
@@ -25,18 +24,15 @@ class Client
 {
     private ClientInterface $httpClient;
     private RequestFactoryInterface $requestFactory;
-    private StreamFactoryInterface $streamFactory;
     private Config $config;
 
     public function __construct(
         ClientInterface $httpClient,
         RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory,
         Config $config,
     ) {
         $this->httpClient = $httpClient;
         $this->requestFactory = $requestFactory;
-        $this->streamFactory = $streamFactory;
         $this->config = $config;
     }
 
